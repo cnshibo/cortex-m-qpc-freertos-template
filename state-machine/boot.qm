@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<model version="6.2.3" links="0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.state-machine.com/qm/qm.xsd">
+ <framework name="qpc"/>
+ <package name="base" stereotype="0x00">
+  <class name="qm_boot" superclass="qpc::QActive">
+   <attribute name="timer" type="QTimeEvt" visibility="0x00" properties="0x00"/>
+   <attribute name="alart_timer" type="QTimeEvt" visibility="0x00" properties="0x00"/>
+   <statechart properties="0x01">
+    <initial target="../2">
+     <action>QActive_subscribe((QActive *)me, BOOT_STRAP_SIG);</action>
+     <initial_glyph conn="6,12,5,0,4,2">
+      <action box="0,-2,10,2"/>
+     </initial_glyph>
+    </initial>
+    <state name="init">
+     <entry>LOG(&quot;qm_boot init&quot;);
+
+{
+QEvt *pe = Q_NEW(QEvt, APP_ACTIVATE_SIG);
+QF_PUBLISH((QEvt*)pe, NULL);
+}</entry>
+     <state_glyph node="30,14,58,40">
+      <entry box="1,2,6,2"/>
+     </state_glyph>
+    </state>
+    <state name="reset">
+     <documentation>1. just after hardware reset. 
+
+2. wait for QF_onStartup() to be called, it will publish BOOT_STRAP_SIG
+
+3. This is the whole system's start point
+</documentation>
+     <entry>LOG(&quot;qm_boot reset&quot;);
+
+
+</entry>
+     <exit>//LOG(&quot;core bootstrap&quot;);</exit>
+     <tran trig="BOOT_STRAP" target="../../1">
+      <action>LOG(&quot;BOOT_STRAP_SIG&quot;);</action>
+      <tran_glyph conn="6,30,3,3,24">
+       <action box="1,-2,14,2"/>
+      </tran_glyph>
+     </tran>
+     <state_glyph node="6,14,16,22">
+      <entry box="1,2,6,2"/>
+      <exit box="1,4,6,2"/>
+     </state_glyph>
+    </state>
+    <state_diagram size="177,111"/>
+   </statechart>
+  </class>
+  <attribute name="ao_qm_boot" type="QActive * const" visibility="0x00" properties="0x00"/>
+  <operation name="qm_boot_ctor" type="void" visibility="0x00" properties="0x00">
+   <code>qm_boot *me = &amp;l_qm_boot;
+
+QActive_ctor(&amp;me-&gt;super, Q_STATE_CAST(&amp;qm_boot_initial));
+
+QTimeEvt_ctorX (&amp;me-&gt;timer, &amp;me-&gt;super, BOOT_TIMEOUT_SIG, 0U);
+</code>
+  </operation>
+ </package>
+ <directory name="../">
+  <directory name="include">
+   <directory name="qm">
+    <file name="qm_boot.h">
+     <text>#ifndef __QM_BOOT_H__
+#define __QM_BOOT_H__
+
+#include &quot;qm/qm_types.h&quot;
+
+QM_BEGIN_DECL
+
+$declare(base::ao_qm_boot)
+
+$declare(base::qm_boot_ctor)
+
+QM_END_DECL
+#endif
+</text>
+    </file>
+   </directory>
+  </directory>
+  <directory name="src">
+   <directory name="qm">
+    <file name="qm_boot.cpp">
+     <text>#include &quot;qm/qm_boot.h&quot;
+#include &quot;qm/qm_common.h&quot;
+
+$declare(base::qm_boot)
+
+
+static qm_boot l_qm_boot;
+
+QActive* const ao_qm_boot = (QActive*)&amp;l_qm_boot;
+
+$define(base::qm_boot_ctor)
+$define(base::qm_boot)
+</text>
+    </file>
+   </directory>
+  </directory>
+ </directory>
+</model>

@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<model version="6.1.1" links="0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.state-machine.com/qm/qm.xsd">
+ <framework name="qpc"/>
+ <package name="base" stereotype="0x00">
+  <class name="qm_app" superclass="qpc::QActive">
+   <attribute name="timer" type="QTimeEvt" visibility="0x00" properties="0x00"/>
+   <statechart properties="0x01">
+    <initial target="../2">
+     <action>QActive_subscribe((QActive *)me, APP_ACTIVATE_SIG);
+
+QActive_subscribe((QActive *)me, APP_NEXT_SIG);
+
+QActive_subscribe((QActive *)me, APP_START_SIG);
+QActive_subscribe((QActive *)me, APP_STOP_SIG);
+
+
+QActive_subscribe((QActive *)me, KB_K0_PRESS_SIG);</action>
+     <initial_glyph conn="6,12,5,0,4,2">
+      <action box="0,-2,10,2"/>
+     </initial_glyph>
+    </initial>
+    <state name="init">
+     <entry>LOG(&quot;qm_app init&quot;);
+
+l_app.init();</entry>
+     <exit>l_app.deinit();</exit>
+     <initial target="../1">
+      <initial_glyph conn="34,20,5,0,4,2">
+       <action box="0,-2,10,2"/>
+      </initial_glyph>
+     </initial>
+     <state name="product_mode">
+      <documentation>init all peripherial pin/clock here</documentation>
+      <entry>
+//gpio_init();
+</entry>
+      <initial target="../1">
+       <initial_glyph conn="40,28,5,0,4,2">
+        <action box="0,-2,10,2"/>
+       </initial_glyph>
+      </initial>
+      <state name="ready">
+       <documentation>all things is ready, communication is working,waiting command to init-start inverter </documentation>
+       <entry>LOG(&quot;qm_app ready&quot;);
+
+{
+QEvt *pe = NULL;
+pe = Q_NEW(QEvt, ACTIVATE_ACTOR_SIG);
+QF_PUBLISH((QEvt*)pe, NULL);
+}</entry>
+       <state_glyph node="40,30,66,21">
+        <entry box="1,2,6,2"/>
+       </state_glyph>
+      </state>
+      <state_glyph node="34,22,82,38">
+       <entry box="1,2,6,2"/>
+      </state_glyph>
+     </state>
+     <state_glyph node="28,14,97,58">
+      <entry box="1,2,6,2"/>
+      <exit box="1,4,6,2"/>
+     </state_glyph>
+    </state>
+    <state name="reset">
+     <documentation>just after hardware reset</documentation>
+     <entry>LOG(&quot;qm_app reset&quot;);</entry>
+     <tran trig="APP_ACTIVATE" target="../../1">
+      <tran_glyph conn="6,22,3,3,22">
+       <action box="2,-2,13,2"/>
+      </tran_glyph>
+     </tran>
+     <state_glyph node="6,14,16,22">
+      <entry box="1,2,6,2"/>
+     </state_glyph>
+    </state>
+    <state_diagram size="169,95"/>
+   </statechart>
+  </class>
+  <attribute name="ao_qm_app" type="QActive * const" visibility="0x00" properties="0x00"/>
+  <operation name="qm_app_ctor" type="void" visibility="0x00" properties="0x00">
+   <code>qm_app *me = &amp;l_qm_app;
+
+QActive_ctor(&amp;me-&gt;super, Q_STATE_CAST(&amp;qm_app_initial));
+
+QTimeEvt_ctorX (&amp;me-&gt;timer, &amp;me-&gt;super, APP_TIMEOUT_SIG, 0U);
+</code>
+  </operation>
+ </package>
+ <directory name="../">
+  <directory name="include">
+   <directory name="qm">
+    <file name="qm_app.h">
+     <text>#ifndef __QM_APP_H__
+#define __QM_APP_H__
+
+#include &quot;qm/qm_types.h&quot;
+
+QM_BEGIN_DECL
+
+$declare(base::ao_qm_app)
+
+$declare(base::qm_app_ctor)
+
+QM_END_DECL
+#endif
+</text>
+    </file>
+   </directory>
+  </directory>
+  <directory name="src">
+   <directory name="qm">
+    <file name="qm_app.cpp">
+     <text>#include &quot;qm/qm_app.h&quot;
+#include &quot;qm/qm_common.h&quot;
+
+$declare(base::qm_app)
+
+
+static qm_app l_qm_app;
+
+QActive* const ao_qm_app = (QActive*)&amp;l_qm_app;
+
+$define(base::qm_app_ctor)
+$define(base::qm_app)
+</text>
+    </file>
+   </directory>
+  </directory>
+ </directory>
+</model>

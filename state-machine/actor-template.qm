@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<model version="6.2.3" links="0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.state-machine.com/qm/qm.xsd">
+ <framework name="qpc"/>
+ <package name="base" stereotype="0x00">
+  <class name="qm_template" superclass="qpc::QActive">
+   <attribute name="timer" type="QTimeEvt" visibility="0x00" properties="0x00"/>
+   <statechart properties="0x01">
+    <initial target="../2">
+     <action>QActive_subscribe((QActive *)me, ACTIVATE_ACTOR_SIG);
+QActive_subscribe((QActive *)me, DEACTIVATE_ACTOR_SIG);
+
+    
+
+QActive_subscribe((QActive *)me, TEMPLATE_INIT_SIG);
+QActive_subscribe((QActive *)me, TEMPLATE_DEINIT_SIG);
+</action>
+     <initial_glyph conn="14,12,5,0,4,2">
+      <action box="0,-2,10,2"/>
+     </initial_glyph>
+    </initial>
+    <state name="active">
+     <entry>LOG(&quot;qm_template init&quot;);
+
+</entry>
+     <initial target="../2">
+      <initial_glyph conn="42,20,5,0,4,2">
+       <action box="0,-2,10,2"/>
+      </initial_glyph>
+     </initial>
+     <tran trig="DEACTIVATE_ACTOR" target="../../2">
+      <tran_glyph conn="36,26,3,3,-22">
+       <action box="-20,-2,11,2"/>
+      </tran_glyph>
+     </tran>
+     <state name="idle">
+      <entry>LOG(&quot;qm_template idle&quot;);</entry>
+      <tran trig="TEMPLATE_INIT" target="../../3">
+       <tran_glyph conn="42,32,3,3,24">
+        <action box="2,-2,16,2"/>
+       </tran_glyph>
+      </tran>
+      <state_glyph node="42,22,18,30">
+       <entry box="1,2,6,2"/>
+      </state_glyph>
+     </state>
+     <state name="working">
+      <entry>LOG(&quot;qm_template working&quot;);
+
+QTimeEvt_armX(&amp;me-&gt;timer,  BSP_TICKS_PER_SEC/30, 0);</entry>
+      <exit>
+QTimeEvt_disarm(&amp;me-&gt;timer);</exit>
+      <tran trig="TEMPLATE_DEINIT" target="../../2">
+       <tran_glyph conn="66,36,3,3,-24">
+        <action box="-22,-2,20,2"/>
+       </tran_glyph>
+      </tran>
+      <state_glyph node="66,22,94,62">
+       <entry box="1,2,6,2"/>
+       <exit box="1,4,6,2"/>
+      </state_glyph>
+     </state>
+     <state_glyph node="36,14,132,78">
+      <entry box="1,2,6,2"/>
+     </state_glyph>
+    </state>
+    <state name="reset">
+     <entry>LOG(&quot;qm_template reset&quot;);</entry>
+     <tran trig="ACTIVATE_ACTOR" target="../../1">
+      <tran_glyph conn="14,22,3,3,22">
+       <action box="2,-2,13,2"/>
+      </tran_glyph>
+     </tran>
+     <state_glyph node="14,14,16,22">
+      <entry box="1,2,6,2"/>
+     </state_glyph>
+    </state>
+    <state_diagram size="186,106"/>
+   </statechart>
+  </class>
+  <attribute name="ao_qm_template" type="QActive * const" visibility="0x00" properties="0x00"/>
+  <operation name="qm_template_ctor" type="void" visibility="0x00" properties="0x00">
+   <code>qm_template *me = &amp;l_qm_template;
+
+QActive_ctor(&amp;me-&gt;super, Q_STATE_CAST(&amp;qm_template_initial));
+
+QTimeEvt_ctorX (&amp;me-&gt;timer, &amp;me-&gt;super, TEMPLATE_TIMEOUT_SIG, 0U);
+</code>
+  </operation>
+ </package>
+ <directory name="../">
+  <directory name="include">
+   <directory name="qm">
+    <file name="qm_template.h">
+     <text>#ifndef __qm_template_H__
+#define __qm_template_H__
+
+#include &quot;qm/qm_types.h&quot;
+
+QM_BEGIN_DECL
+
+$declare(base::ao_qm_template)
+
+$declare(base::qm_template_ctor)
+
+QM_END_DECL
+#endif
+</text>
+    </file>
+   </directory>
+  </directory>
+  <directory name="src">
+   <directory name="qm">
+    <file name="qm_template.cpp">
+     <text>#include &quot;qm/qm_template.h&quot;
+#include &quot;qm/qm_common.h&quot;
+
+$declare(base::qm_template)
+
+
+static qm_template l_qm_template;
+
+QActive* const ao_qm_template = (QActive*)&amp;l_qm_template;
+
+$define(base::qm_template_ctor)
+$define(base::qm_template)
+</text>
+    </file>
+   </directory>
+  </directory>
+ </directory>
+</model>

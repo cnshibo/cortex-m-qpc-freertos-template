@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<model version="6.1.1" links="0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.state-machine.com/qm/qm.xsd">
+ <framework name="qpc"/>
+ <package name="base" stereotype="0x00">
+  <class name="qm_rtt" superclass="qpc::QActive">
+   <attribute name="timer" type="QTimeEvt" visibility="0x00" properties="0x00"/>
+   <statechart properties="0x01">
+    <initial target="../2">
+     <action>QActive_subscribe((QActive *)me, ACTIVATE_ACTOR_SIG);
+QActive_subscribe((QActive *)me, DEACTIVATE_ACTOR_SIG);</action>
+     <initial_glyph conn="14,12,5,0,4,2">
+      <action box="0,-2,10,2"/>
+     </initial_glyph>
+    </initial>
+    <state name="active">
+     <entry>LOG(&quot;qm_rtt active&quot;);
+
+QTimeEvt_armX(&amp;me-&gt;timer,  BSP_TICKS_PER_SEC, BSP_TICKS_PER_SEC/5);</entry>
+     <tran trig="RTT_TIMEOUT">
+      <action>
+rtt_poll();
+</action>
+      <tran_glyph conn="38,40,3,-1,14">
+       <action box="1,-2,12,2"/>
+      </tran_glyph>
+     </tran>
+     <tran trig="DEACTIVATE_ACTOR" target="../../2">
+      <tran_glyph conn="38,26,3,3,-24">
+       <action box="-22,-2,19,2"/>
+      </tran_glyph>
+     </tran>
+     <state_glyph node="38,14,56,48">
+      <entry box="1,2,6,2"/>
+     </state_glyph>
+    </state>
+    <state name="reset">
+     <entry>LOG(&quot;qm_rtt reset&quot;);</entry>
+     <tran trig="ACTIVATE_ACTOR" target="../../1">
+      <tran_glyph conn="14,22,3,3,24">
+       <action box="2,-2,15,2"/>
+      </tran_glyph>
+     </tran>
+     <state_glyph node="14,14,16,22">
+      <entry box="1,2,6,2"/>
+     </state_glyph>
+    </state>
+    <state_diagram size="121,80"/>
+   </statechart>
+  </class>
+  <attribute name="ao_qm_rtt" type="QActive * const" visibility="0x00" properties="0x00"/>
+  <operation name="qm_rtt_ctor" type="void" visibility="0x00" properties="0x00">
+   <code>qm_rtt *me = &amp;l_qm_rtt;
+
+QActive_ctor(&amp;me-&gt;super, Q_STATE_CAST(&amp;qm_rtt_initial));
+
+QTimeEvt_ctorX (&amp;me-&gt;timer, &amp;me-&gt;super, RTT_TIMEOUT_SIG, 0U);
+</code>
+  </operation>
+ </package>
+ <directory name="../">
+  <directory name="include">
+   <directory name="qm">
+    <file name="qm_rtt.h">
+     <text>#ifndef __QM_RTT_H__
+#define __QM_RTT_H__
+
+#include &quot;qm/qm_types.h&quot;
+
+QM_BEGIN_DECL
+
+$declare(base::ao_qm_rtt)
+
+$declare(base::qm_rtt_ctor)
+
+QM_END_DECL
+#endif
+</text>
+    </file>
+   </directory>
+  </directory>
+  <directory name="src">
+   <directory name="qm">
+    <file name="qm_rtt.cpp">
+     <text>#include &quot;qm/qm_rtt.h&quot;
+#include &quot;qm/qm_common.h&quot;
+
+$declare(base::qm_rtt)
+
+
+static qm_rtt l_qm_rtt;
+
+QActive* const ao_qm_rtt = (QActive*)&amp;l_qm_rtt;
+
+$define(base::qm_rtt_ctor)
+$define(base::qm_rtt)
+</text>
+    </file>
+   </directory>
+  </directory>
+ </directory>
+</model>

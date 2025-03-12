@@ -1,0 +1,234 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<model version="6.2.3" links="0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.state-machine.com/qm/qm.xsd">
+ <framework name="qpc"/>
+ <package name="base" stereotype="0x00"/>
+ <directory name="../">
+  <directory name="include">
+   <directory name="qm">
+    <file name="qm.h">
+     <text>#ifndef __QM_H__
+#define __QM_H__
+
+#include &quot;qm/qm_signals.h&quot;
+#include &quot;qm/qm_events.h&quot;
+
+#include &quot;qm/qm_led.h&quot;
+#include &quot;qm/qm_kb.h&quot;
+#include &quot;qm/qm_rtt.h&quot;
+#include &quot;qm/qm_boot.h&quot;
+
+#include &quot;qm/qm_app.h&quot;
+
+#endif</text>
+    </file>
+    <file name="qm_common.h">
+     <text>#ifndef __QM_COMMON_H__
+#define __QM_COMMON_H__
+
+#include &quot;bl/bl.h&quot;
+#include &quot;dl/dl.h&quot;
+#include &quot;sl/sl.h&quot;
+#include &quot;al/al.h&quot;
+
+#endif
+</text>
+    </file>
+    <file name="qm_signals.h">
+     <text>#ifndef __QM_SIGNALS_H__
+#define __QM_SIGNALS_H__
+
+
+#include &quot;qpc.h&quot;
+
+enum qm_qpc_signals
+{
+    /*signal start value*/
+    START_SIG = Q_USER_SIG,
+
+    /*boot*/
+    BOOT_TIMEOUT_SIG,
+    BOOT_STRAP_SIG,
+
+    /*activate AOs*/
+    ACTIVATE_ACTOR_SIG,    
+    DEACTIVATE_ACTOR_SIG,
+
+    /*app*/
+    APP_ACTIVATE_SIG,
+    APP_TIMEOUT_SIG,
+    APP_NEXT_SIG,
+    APP_START_SIG,
+    APP_STOP_SIG,
+
+    /*rtt*/
+    RTT_TIMEOUT_SIG,
+    RTT_INIT_SIG,
+    RTT_DEINIT_SIG,
+
+    /*led sig*/
+    LED_TIMEOUT_SIG,
+    LED_INIT_SIG,
+    LED_DEINIT_SIG,
+    LED_BLINK_SLOW_SIG,
+    LED_BLINK_QUICK_SIG,
+
+     /*kb*/
+    KB_TIMEOUT_SIG,
+    KB_INIT_SIG,
+    KB_DEINIT_SIG,
+    KB_HOLD_TIMEOUT_SIG,
+    KB_KEY_EVENT_SIG,
+    KB_K0_PRESS_SIG,
+    KB_K0_RELEASE_SIG,
+    KB_K1_PRESS_SIG,
+    KB_K1_RELEASE_SIG,
+    KB_K0_HOLD_SIG,
+    KB_K1_HOLD_SIG,
+
+    MAX_SIG,
+};
+
+#endif</text>
+    </file>
+    <file name="qm_events.h">
+     <text>#ifndef __QM_EVENTS_H__
+#define __QM_EVENTS_H__
+
+#include &quot;qpc.h&quot;
+#include &quot;bl/config.h&quot;
+#include &quot;bl/buffer.h&quot;
+
+typedef struct key_evt_t 
+{
+    QEvt super;
+    uint16_t id;
+    uint32_t state;
+    
+} key_evt_t;
+
+
+#endif</text>
+    </file>
+    <file name="qm_types.h">
+     <text>#ifndef __QM_TYPES_H__
+#define __QM_TYPES_H__
+
+#ifdef __cplusplus
+#define QM_BEGIN_DECL   extern &quot;C&quot; {
+#define QM_END_DECL     }
+#else
+#define QM_BEGIN_DECL
+#define QM_END_DECL
+#endif
+
+#include &quot;qm/qm_signals.h&quot;
+#include &quot;qm/qm_events.h&quot;
+
+#endif</text>
+    </file>
+   </directory>
+  </directory>
+  <directory name="src">
+   <directory name="qm">
+    <file name="qm_main.cpp">
+     <text>#include &lt;stdint.h&gt;
+#include &lt;string.h&gt;
+
+#include &quot;bl/bl.h&quot;
+#include &quot;qm/qm.h&quot;
+#include &quot;qpc.h&quot;
+
+/* Local-scope objects -----------------------------------------------------*/
+Q_DEFINE_THIS_FILE
+
+static QEvt const *l_qm_boot_QSto[10];
+static QEvt const *l_qm_rtt_QSto[10];
+static QEvt const *l_qm_led_QSto[10];
+static QEvt const *l_qm_kb_QSto[10];
+static QEvt const *l_qm_app_QSto[100];
+
+static StackType_t l_qm_boot_stack[configMINIMAL_STACK_SIZE];
+static StackType_t l_qm_rtt_stack[configMINIMAL_STACK_SIZE];
+static StackType_t l_qm_led_stack[configMINIMAL_STACK_SIZE];
+static StackType_t l_qm_kb_stack[configMINIMAL_STACK_SIZE];
+static StackType_t l_qm_app_stack[configMINIMAL_STACK_SIZE];
+
+static QF_MPOOL_EL(QEvt)          l_small_pool[100];
+static QF_MPOOL_EL(key_evt_t)     l_middle_pool[100];
+
+
+static QSubscrList    l_subscrSto[MAX_SIG];
+/*..........................................................................*/
+
+/*..........................................................................*/
+extern &quot;C&quot; int qpc_main() 
+{
+    LOG(&quot;\n*** Power on, in main() ***\n&quot;);
+
+    /*************************************************************************/
+    /* state-machine framework */
+    QF_init();
+
+    qm_boot_ctor();
+
+    qm_app_ctor();
+    qm_rtt_ctor();
+    qm_led_ctor();
+    qm_kb_ctor();
+
+    /* initialize the event pools... */
+    QF_poolInit(l_small_pool,   sizeof(l_small_pool),   sizeof(l_small_pool[0]));
+    QF_poolInit(l_middle_pool,  sizeof(l_middle_pool),  sizeof(l_middle_pool[0]));
+
+
+    /* init publish-subscribe */
+    QF_psInit(l_subscrSto, Q_DIM(l_subscrSto));
+
+
+    QACTIVE_START(ao_qm_rtt,
+                  3U,
+                  l_qm_rtt_QSto, Q_DIM(l_qm_rtt_QSto),
+                  l_qm_rtt_stack, sizeof(l_qm_rtt_stack), 
+                  (QEvt *)0);
+
+
+    QACTIVE_START(ao_qm_led,
+                  4U,
+                  l_qm_led_QSto, Q_DIM(l_qm_led_QSto),
+                  l_qm_led_stack, sizeof(l_qm_led_stack), 
+                  (QEvt *)0);
+
+    QACTIVE_START(ao_qm_kb,
+                  5U,
+                  l_qm_kb_QSto, Q_DIM(l_qm_kb_QSto),
+                  l_qm_kb_stack, sizeof(l_qm_kb_stack), 
+                  (QEvt *)0);
+
+    QACTIVE_START(ao_qm_app,
+                  14U,
+                  l_qm_app_QSto, Q_DIM(l_qm_app_QSto),
+                  l_qm_app_stack, sizeof(l_qm_app_stack), 
+                  (QEvt *)0);
+
+    QACTIVE_START(ao_qm_boot,
+                  15U,
+                  l_qm_boot_QSto, Q_DIM(l_qm_boot_QSto),
+                  l_qm_boot_stack, sizeof(l_qm_boot_stack), 
+                  (QEvt *)0);
+
+    LOG(&quot;\n*** Actors did reset ***\n&quot;);
+
+
+    QF_run();                              /* run the QF application */
+
+    return 0;
+}
+
+
+
+</text>
+    </file>
+   </directory>
+  </directory>
+ </directory>
+</model>

@@ -1,0 +1,21 @@
+How to port FreeRTOS to STM32F4xx using STM32CubeMX:
+
+1. Create a normal project in STM32CubeMX for STM32F4xx device by using HAL library. 
+
+2. Disable generate code for SWI, PendSV, SysTick handlers in STM32CubeMX. We will use FreeRTOS handlers for these.
+
+3. Select TIM14 for Hal tick source in STM32CubeMX.
+
+3. Download FreeRTOS-Kernel V11.1.0 source code from FreeRTOS website. FreeRTOS-Kernel V11.1.0 source code is part of the FreeRTOS 202406.00 LTS release.
+
+4. Copy the FreeRTOS-Kernel source code to the project directory: third_party/FreeRTOS
+
+5. Create port folder under third_party/FreeRTOS, put FreeRTOSConfig.h
+
+6. Add files in third_party/FreeRTOS/Source/portable/GCC/ARM_CM4F to Keil
+
+7. Add files in third_party/FreeRTOS to Keil
+
+8. Add necessary paths to Keil
+
+

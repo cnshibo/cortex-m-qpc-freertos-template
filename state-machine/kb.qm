@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<model version="5.3.0" links="0">
+ <framework name="qpc"/>
+ <package name="base" stereotype="0x02">
+  <class name="qm_kb" superclass="qpc::QActive">
+   <attribute name="timer" type="QTimeEvt" visibility="0x00" properties="0x00"/>
+   <attribute name="hold_timer" type="QTimeEvt" visibility="0x00" properties="0x00"/>
+   <statechart properties="0x01">
+    <initial target="../2">
+     <action>QActive_subscribe((QActive *)me, ACTIVATE_ACTOR_SIG);
+QActive_subscribe((QActive *)me, DEACTIVATE_ACTOR_SIG);
+
+
+QActive_subscribe((QActive *)me, KB_INIT_SIG);
+
+QActive_subscribe((QActive *)me, KB_KEY_EVENT_SIG);
+
+QActive_subscribe((QActive *)me, KB_K0_PRESS_SIG);
+QActive_subscribe((QActive *)me, KB_K0_RELEASE_SIG);
+
+QActive_subscribe((QActive *)me, KB_K1_PRESS_SIG);
+QActive_subscribe((QActive *)me, KB_K1_RELEASE_SIG);
+
+</action>
+     <initial_glyph conn="2,10,5,0,4,2">
+      <action box="0,-2,10,2"/>
+     </initial_glyph>
+    </initial>
+    <state name="init">
+     <entry>LOG(&quot;qm_kb init&quot;);
+
+kb_init();
+
+QTimeEvt_armX(&amp;me-&gt;timer,  BSP_TICKS_PER_SEC/50, BSP_TICKS_PER_SEC/50);</entry>
+     <exit>QTimeEvt_disarm(&amp;me-&gt;timer);</exit>
+     <tran trig="KB_TIMEOUT">
+      <action>
+kb_scan();
+</action>
+      <tran_glyph conn="22,25,3,-1,14">
+       <action box="2,-2,11,2"/>
+      </tran_glyph>
+     </tran>
+     <tran trig="KB_KEY_EVENT">
+      <action>//LOG(&quot;key evt&quot;);
+
+key_evt_t *ge = (key_evt_t *)e;
+
+kb_dispatch_event(ge-&gt;id, ge-&gt;state);</action>
+      <tran_glyph conn="22,30,3,-1,14">
+       <action box="2,-2,12,2"/>
+      </tran_glyph>
+     </tran>
+     <tran trig="KB_K0_PRESS" target="../7">
+      <tran_glyph conn="22,42,3,3,12">
+       <action box="0,-2,13,2"/>
+      </tran_glyph>
+     </tran>
+     <tran trig="KB_K1_PRESS" target="../8">
+      <tran_glyph conn="22,66,3,3,12">
+       <action box="0,-2,13,2"/>
+      </tran_glyph>
+     </tran>
+     <tran trig="KB_K0_RELEASE" target="../9">
+      <tran_glyph conn="84,56,1,3,-24">
+       <action box="-17,-2,15,2"/>
+      </tran_glyph>
+     </tran>
+     <tran trig="KB_K1_RELEASE" target="../9">
+      <tran_glyph conn="84,60,1,3,-24">
+       <action box="-17,-2,15,2"/>
+      </tran_glyph>
+     </tran>
+     <tran trig="DEACTIVATE_ACTOR" target="../../2">
+      <tran_glyph conn="22,22,3,3,-20">
+       <action box="-16,-2,18,2"/>
+      </tran_glyph>
+     </tran>
+     <state name="k0_hold">
+      <entry>QTimeEvt_armX(&amp;me-&gt;hold_timer,  BSP_TICKS_PER_SEC/2, BSP_TICKS_PER_SEC/2);</entry>
+      <exit>QTimeEvt_disarm(&amp;me-&gt;hold_timer);</exit>
+      <tran trig="KB_HOLD_TIMEOUT">
+       <action>
+QEvt *pe = Q_NEW(QEvt, KB_K0_HOLD_SIG);
+QF_PUBLISH((QEvt*)pe, NULL);
+
+//LOG(&quot;K0 Holding&quot;);</action>
+       <tran_glyph conn="34,46,3,-1,16">
+        <action box="0,-2,17,2"/>
+       </tran_glyph>
+      </tran>
+      <state_glyph node="34,36,18,16">
+       <entry box="1,2,6,2"/>
+       <exit box="1,4,6,2"/>
+      </state_glyph>
+     </state>
+     <state name="k1_hold">
+      <entry>QTimeEvt_armX(&amp;me-&gt;hold_timer,  BSP_TICKS_PER_SEC/2, BSP_TICKS_PER_SEC/2);</entry>
+      <exit>QTimeEvt_disarm(&amp;me-&gt;hold_timer);</exit>
+      <tran trig="KB_HOLD_TIMEOUT">
+       <action>
+QEvt *pe = Q_NEW(QEvt, KB_K1_HOLD_SIG);
+QF_PUBLISH((QEvt*)pe, NULL);</action>
+       <tran_glyph conn="34,70,3,-1,16">
+        <action box="0,-2,17,2"/>
+       </tran_glyph>
+      </tran>
+      <state_glyph node="34,59,18,17">
+       <entry box="1,2,6,2"/>
+       <exit box="1,4,6,2"/>
+      </state_glyph>
+     </state>
+     <state name="idle">
+      <state_glyph node="60,46,18,20"/>
+     </state>
+     <state_glyph node="22,12,62,72">
+      <entry box="1,2,6,2"/>
+      <exit box="1,4,6,2"/>
+     </state_glyph>
+    </state>
+    <state name="reset">
+     <documentation>just after hardware reset</documentation>
+     <entry>LOG(&quot;qm_kb reset&quot;);</entry>
+     <tran trig="ACTIVATE_ACTOR" target="../../1">
+      <tran_glyph conn="2,20,3,3,20">
+       <action box="0,-2,13,2"/>
+      </tran_glyph>
+     </tran>
+     <state_glyph node="2,12,14,19">
+      <entry box="1,2,6,2"/>
+     </state_glyph>
+    </state>
+    <state_diagram size="117,105"/>
+   </statechart>
+  </class>
+  <attribute name="ao_qm_kb" type="QActive * const" visibility="0x00" properties="0x00"/>
+  <operation name="qm_kb_ctor" type="void" visibility="0x00" properties="0x00">
+   <code>qm_kb *me = &amp;l_qm_kb;
+
+QActive_ctor(&amp;me-&gt;super, Q_STATE_CAST(&amp;qm_kb_initial));
+
+QTimeEvt_ctorX (&amp;me-&gt;timer, &amp;me-&gt;super, KB_TIMEOUT_SIG, 0U);
+
+QTimeEvt_ctorX (&amp;me-&gt;hold_timer, &amp;me-&gt;super, KB_HOLD_TIMEOUT_SIG, 0U);</code>
+  </operation>
+ </package>
+ <directory name="../">
+  <directory name="include">
+   <directory name="qm">
+    <file name="qm_kb.h">
+     <text>#ifndef __QM_KB_H__
+#define __QM_KB_H__
+
+#include &quot;qm/qm_types.h&quot;
+
+QM_BEGIN_DECL
+
+$declare(base::ao_qm_kb)
+
+$declare(base::qm_kb_ctor)
+
+QM_END_DECL
+#endif
+</text>
+    </file>
+   </directory>
+  </directory>
+  <directory name="src">
+   <directory name="qm">
+    <file name="qm_kb.cpp">
+     <text>#include &quot;qm/qm_kb.h&quot;
+#include &quot;qm/qm_common.h&quot;
+
+$declare(base::qm_kb)
+
+
+static qm_kb l_qm_kb;
+
+QActive* const ao_qm_kb = (QActive*)&amp;l_qm_kb;
+
+$define(base::qm_kb_ctor)
+$define(base::qm_kb)
+</text>
+    </file>
+   </directory>
+  </directory>
+ </directory>
+</model>
